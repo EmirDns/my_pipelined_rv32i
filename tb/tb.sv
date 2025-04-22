@@ -1,18 +1,18 @@
 module tb ();
-  logic [riscv_pkg::XLEN-1:0] addr;
-  logic [riscv_pkg::XLEN-1:0] data;
-  logic [riscv_pkg::XLEN-1:0] pc;
-  logic [riscv_pkg::XLEN-1:0] instr;
+  logic [31:0] addr;
+  logic [31:0] data;
+  logic [31:0] pc;
+  logic [31:0] instr;
   logic [                4:0] reg_addr;
-  logic [riscv_pkg::XLEN-1:0] reg_data;
-  logic [riscv_pkg::XLEN-1:0] mem_addr;
-  logic [riscv_pkg::XLEN-1:0] mem_data;
+  logic [31:0] reg_data;
+  logic [31:0] mem_addr;
+  logic [31:0] mem_data;
   logic                       mem_wrt;
   logic                       update;
   logic                       clk;
   logic                       rstn;
 
-  core_model i_core_model (
+  riscv_multicycle i_core_model (
       .clk_i(clk),
       .rstn_i(rstn),
       .addr_i(addr),
