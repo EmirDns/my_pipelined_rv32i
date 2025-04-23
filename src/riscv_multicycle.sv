@@ -350,7 +350,10 @@ module riscv_multicycle
             $display("Error opening pipeline log file for writing.");
             $finish;  // Terminate simulation if file cannot be opened
         end
+        $fwrite(LogFile, "\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n", "F", "D", "E", "M", "WB"); 
     end
+
+    
 
     always_ff @(posedge clk_i) begin
         if(rstn_i) begin
