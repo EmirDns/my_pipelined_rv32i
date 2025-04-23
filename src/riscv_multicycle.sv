@@ -69,13 +69,13 @@ module riscv_multicycle
     logic RegWrite_e, ALU_Src_e, MemWrite_e, Branch_e, Jump_e, Zero_e, PCSrc_e;
 
     // Memory stage variables
-    logic [31:0] ALUResult_m, WriteData_m, PCplus4_m, ReadData_m;
+    logic [31:0] ALUResult_m, WriteData_m, PCplus4_m, ReadData_m, pc_m;
     logic [4:0] RD_m;
     logic [1:0] ResultSrc_m;
     logic RegWrite_m, MemWrite_m;
 
     // Write-back stage variables
-    logic [31:0] ALUResult_w, ReadData_w, PCplus4_w, Result_w;
+    logic [31:0] ALUResult_w, ReadData_w, PCplus4_w, Result_w, pc_w;
     logic [4:0] RD_w;
     logic [1:0] ResultSrc_w;
     logic RegWrite_w;
@@ -252,6 +252,7 @@ module riscv_multicycle
         .WriteData_e(WriteData_e), // ALU'nun SrcA'sı. Hazard MUX'la ilgili
         .rd_e(RD_e),
         .pcplus4_e(PCplus4_e),
+        .pc_e(pc_e),
         .RegWrite_e(RegWrite_e),
         .ResultSrc_e(ResultSrc_e),
         .MemWrite_e(MemWrite_e),
@@ -260,6 +261,7 @@ module riscv_multicycle
         .WriteData_m(WriteData_m), //WriteData_e'nin devamı
         .rd_m(RD_m),
         .pcplus4_m(PCplus4_m),
+        .pc_m(pc_m),
         .RegWrite_m(RegWrite_m),
         .ResultSrc_m(ResultSrc_m),
         .MemWrite_m(MemWrite_m)
@@ -284,6 +286,7 @@ module riscv_multicycle
         .ReadData_m(ReadData_m),
         .rd_m(RD_m),
         .pcplus4_m(PCplus4_m),
+        .pc_m(pc_m),
         .RegWrite_m(RegWrite_m),
         .ResultSrc_m(ResultSrc_m),
         
@@ -291,6 +294,7 @@ module riscv_multicycle
         .ReadData_w(ReadData_w),
         .rd_w(RD_w),
         .pcplus4_w(PCplus4_w),
+        .pc_w(pc_w),
         .RegWrite_w(RegWrite_w),
         .ResultSrc_w(ResultSrc_w)
     );
@@ -334,5 +338,32 @@ module riscv_multicycle
     assign data_o      = ReadData_m;              // Simple debug read output (can be enhanced)
     assign update_o    = clk_i;               // Retire signal (simple: high when not in reset)
     assign mem_wrt_o   = MemWrite_m; 
+
+
+    integer LogFile;
+    integer cycle = 0;
+    
+    // Open the file to write logs (this should be done in an initial block)
+    initial begin
+        LogFile = $fopen("pipe_log", "w");  // Open the log file for writing
+        if (LogFile == 0) begin
+            $display("Error opening pipeline log file for writing.");
+            $finish;  // Terminate simulation if file cannot be opened
+        end
+    end
+
+    always_ff @(posedge clk_i) begin
+        if(rstn_i) begin
+            $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", 
+                cycle,
+                (pc_o == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_o)),
+                (pc_d == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_d)),
+                (pc_e == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_e)),
+                (pc_m == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_m)),
+                (pc_w == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_w))); 
+            cycle <= cycle + 1;
+        end
+    end
+
 
 endmodule

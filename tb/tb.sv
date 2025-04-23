@@ -69,7 +69,7 @@ module tb ();
     $finish;
   end
 
-
+  
   initial begin
     $dumpfile("dump.vcd");
     $dumpvars();

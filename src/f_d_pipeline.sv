@@ -13,10 +13,18 @@ module f_d_pipeline(
 );
 
     always_ff @(posedge clk) begin
-        if ((!rst_n) || clear) begin
+        // Reset condition
+        if (!rst_n) begin
             instr_d   <= 32'h00000013; // NOP (ADDI x0, x0, 0)
             pc_d      <= 32'b0;
             pcplus4_d <= 32'b0;
+        end
+
+        // Flush condition
+        else if (clear) begin
+            instr_d   <= 32'h00000013; // NOP (ADDI x0, x0, 0)
+            pc_d      <= 32'hFFFFFFFF;
+            pcplus4_d <= 32'hFFFFFFFF;
         end
 
         else if (enable) begin

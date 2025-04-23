@@ -40,7 +40,8 @@ module d_e_pipeline(
 );
 
     always_ff @(posedge clk) begin
-        if ((!rst_n) || clear) begin
+        // Reset condition
+        if (!rst_n) begin
             rd1_e      <= 32'b0;
             rd2_e      <= 32'b0;
             pc_e       <= 32'b0;
@@ -58,6 +59,27 @@ module d_e_pipeline(
             Jump_e         <= 1'b0;
             Branch_e       <= 1'b0;
         end
+        
+        // Flush condition
+        else if (clear) begin
+            rd1_e      <= 32'b0;
+            rd2_e      <= 32'b0;
+            pc_e       <= 32'hFFFFFFFF;
+            rs1_e      <= 5'b0;
+            rs2_e      <= 5'b0;
+            rd_e       <= 5'b0;
+            ext_imm_e  <= 32'b0;
+            pcplus4_e  <= 32'hFFFFFFFF;
+
+            RegWrite_e     <= 1'b0;
+            MemWrite_e     <= 1'b0;
+            ResultSrc_e    <= 2'b00;
+            ALUControl_e   <= 4'b0000;
+            ALUSrc_e       <= 1'b0;
+            Jump_e         <= 1'b0;
+            Branch_e       <= 1'b0;
+        end
+
         else if (enable) begin
             rd1_e      <= rd1_d;
             rd2_e      <= rd2_d;
