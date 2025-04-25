@@ -21,7 +21,7 @@
 
 
 module data_memory #(
-    parameter MEM_SIZE = 1024, //Memory is 1024 words (each word is 32-bit[4-byte])
+    parameter MEM_SIZE = 2000, //Memory is 1024 words (each word is 32-bit[4-byte])
     parameter DMemInitFile  = "src/dmem.mem"      // data memory initialization file
 )(
     input logic clk,

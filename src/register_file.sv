@@ -41,7 +41,7 @@ module register_file #(
         end         
     end
     
-    //Reading data is a combinational process independent from CLK signal.
+    // Reading data is a combinational process independent from CLK signal.
     assign read_data1 = registers[rs1];
     assign read_data2 = registers[rs2];
     

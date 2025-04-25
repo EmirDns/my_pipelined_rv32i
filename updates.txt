@@ -1,0 +1,9 @@
+DONE:
+- pipe_logger is updated
+- multiple write in register_log issues has fixed
+- imem file could be imported from top_module right now
+- data forwarding is working properly
+
+TODO:
+- stalling and flushing will be checked
+- makefile warning will be arranged 

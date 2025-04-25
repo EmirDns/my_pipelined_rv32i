@@ -34,7 +34,7 @@ module riscv_multicycle
     import riscv_pkg::*;
 #(  // Parameter declaration should be here, within #(
         parameter DMemInitFile  = "src/dmem.mem",  // Data memory initialization file
-        parameter IMemInitFile  = "test/branch_test.mem"  // Instruction memory initialization file
+        parameter IMemInitFile  = "test/data_forw.mem"  // Instruction memory initialization file
     )  (
     input  logic             clk_i,       // system clock
     input  logic             rstn_i,      // system reset
@@ -52,7 +52,7 @@ module riscv_multicycle
     
 
     // Fetch stage variables
-    logic [31:0] nextPC_f, PCplus4_f, instr_f;
+    logic [31:0] pc_f, nextPC_f, PCplus4_f, instr_f;
 
     // Decode stage variables
     logic [31:0] instr_d, pc_d, PCplus_d, RD1_d, RD2_d, Imm_Ext_d;
@@ -96,18 +96,21 @@ module riscv_multicycle
         .rst_n(rstn_i),
         .enable(!Stall_f),
         .PC_next(nextPC_f),
-        .PC(pc_o) 
+        .PC(pc_f) 
     );
     
     PC_Adder PC_Adder(
-        .a(pc_o),
+        .a(pc_f),
         .b(32'd4),
         .c(PCplus4_f)
     );
     
-    instruction_memory instruction_memory(
+    instruction_memory #(
+    .MEM_SIZE(16_000), // When memory is less then size of total instructions in .tb file, program start itself again after memory overflow.
+    .IMemInitFile(IMemInitFile)  
+    ) instruction_memory(
         .rst_n(rstn_i),
-        .addr(pc_o),
+        .addr(pc_f),
         .instruction(instr_f)
     );
     
@@ -117,7 +120,7 @@ module riscv_multicycle
         .clear(Flush_d),  
         .enable(!Stall_d), 
         .instr_f(instr_f),
-        .pc_f(pc_o),
+        .pc_f(pc_f),
         .pcplus4_f(PCplus4_f),
 
         .instr_d(instr_d),
@@ -268,7 +271,10 @@ module riscv_multicycle
     );
     
     
-    data_memory data_memory(
+    data_memory #(
+    .MEM_SIZE(2000),
+    .DMemInitFile(DMemInitFile)  // ← Use top-level parameter
+    ) data_memory(
         .clk(clk_i),
         .rst_n(rstn_i),
         .A(ALUResult_m),
@@ -329,41 +335,77 @@ module riscv_multicycle
     
     
     // === Top-Level Output Assignments ===
+    assign pc_o        = pc_f;
     assign instr_o     = instr_f;              // Retired instruction
     assign reg_addr_o  = instr_d[11:7];        // Destination register address
     assign reg_data_o  = Result_w;                // Data written to register file
-    //assign addr_i      = ALUResult;
     assign mem_addr_o  = ALUResult_m;             // Address accessed in data memory
     assign mem_data_o  = WriteData_m;               // Data written to data memory
     assign data_o      = ReadData_m;              // Simple debug read output (can be enhanced)
-    assign update_o    = clk_i;               // Retire signal (simple: high when not in reset)
+    assign update_o    = clk_i;              
     assign mem_wrt_o   = MemWrite_m; 
 
 
     integer LogFile;
-    integer cycle = 0;
-    
-    // Open the file to write logs (this should be done in an initial block)
+    integer cycle = 1;
+
+    string f_stage, d_stage, e_stage, m_stage, wb_stage;
+
     initial begin
-        LogFile = $fopen("pipe_log", "w");  // Open the log file for writing
+        LogFile = $fopen("pipe_log", "w");
         if (LogFile == 0) begin
             $display("Error opening pipeline log file for writing.");
-            $finish;  // Terminate simulation if file cannot be opened
+            $finish;
         end
         $fwrite(LogFile, "\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n", "F", "D", "E", "M", "WB"); 
     end
 
-    
-
     always_ff @(posedge clk_i) begin
-        if(rstn_i) begin
+        if (rstn_i) begin
+
+            if (pc_f == 32'hFFFFFFFF)
+                f_stage <= "Flushed";
+            else if (pc_f == 32'h00000000)
+                f_stage <= " ";
+            else
+                f_stage <= $sformatf("0x%08h", pc_f);
+
+
+            if (pc_d == 32'hFFFFFFFF)
+                d_stage <= "Flushed";
+            else if (pc_d == 32'h00000000)
+                d_stage <= " ";
+            else
+                d_stage <= $sformatf("0x%08h", pc_d);
+
+
+            if (pc_e == 32'hFFFFFFFF)
+                e_stage <= "Flushed";
+            else if (pc_e == 32'h00000000)
+                e_stage <= " ";
+            else
+                e_stage <= $sformatf("0x%08h", pc_e);
+
+
+            if (pc_m == 32'hFFFFFFFF)
+                m_stage <= "Flushed";
+            else if (pc_m == 32'h00000000)
+                m_stage <= " ";
+            else
+                m_stage <= $sformatf("0x%08h", pc_m);
+
+
+            if (pc_w == 32'hFFFFFFFF)
+                wb_stage <= "Flushed";
+            else if (pc_w == 32'h00000000)
+                wb_stage <= " ";
+            else
+                wb_stage <= $sformatf("0x%08h", pc_w);
+
+
             $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", 
-                cycle,
-                (pc_o == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_o)),
-                (pc_d == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_d)),
-                (pc_e == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_e)),
-                (pc_m == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_m)),
-                (pc_w == 32'hFFFFFFFF ? "Flushed" : $sformatf("0x%08h", pc_w))); 
+                cycle, f_stage, d_stage, e_stage, m_stage, wb_stage);
+
             cycle <= cycle + 1;
         end
     end

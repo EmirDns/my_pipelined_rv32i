@@ -29,10 +29,12 @@ module program_counter(
     );
 
     always_ff @(posedge clk) begin
-        if(!rst_n)
-            PC <= 32'h00000000;
-        else if (enable) 
-            PC <= PC_next;
-    end
+    if (!rst_n)
+        PC <= 32'h00000000;               // During reset
+    else if (PC == 32'h00000000)
+        PC <= 32'h80000000;               // First cycle after reset
+    else if (enable)
+        PC <= PC_next;                    // Normal PC update
+end
 
 endmodule
