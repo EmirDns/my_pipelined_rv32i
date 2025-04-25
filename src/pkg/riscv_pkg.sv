@@ -15,6 +15,8 @@
  * Description: Common RISC-V definitions.
  */
 
+ `timescale 1ns / 1ps
+
 package riscv_pkg;
 
   // ----------------------

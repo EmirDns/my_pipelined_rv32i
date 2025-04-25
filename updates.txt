@@ -6,4 +6,4 @@ DONE:
 
 TODO:
 - stalling and flushing will be checked
-- makefile warning will be arranged 
+- empty cycles in pipeline logger should be checked

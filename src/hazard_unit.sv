@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module hazard_unit(
     input logic [4:0] RS1_e,
     input logic [4:0] RS2_e,

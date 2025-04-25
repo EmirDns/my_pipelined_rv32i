@@ -1,34 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 04/06/2025 02:49:40 AM
-// Design Name: 
-// Module Name: riscv_singlecycle
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
-// `include "program_counter.sv"
-// `include "instruction_memory.sv"
-// `include "register_file.sv"
-// `include "Sign_Extend.sv"
-// `include "ALU.sv"
-// `include "ControlUnit_Top.sv"
-// `include "data_memory.sv"
-// `include "PC_Adder.sv"
-// `include "MUX.sv"
-//`include "riscv_pkg.sv"
 
 module riscv_multicycle
     import riscv_pkg::*;
@@ -361,8 +331,7 @@ module riscv_multicycle
     end
 
     always_ff @(posedge clk_i) begin
-        if (rstn_i) begin
-
+        
             if (pc_f == 32'hFFFFFFFF)
                 f_stage <= "Flushed";
             else if (pc_f == 32'h00000000)
@@ -403,12 +372,11 @@ module riscv_multicycle
                 wb_stage <= $sformatf("0x%08h", pc_w);
 
 
-            $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", 
-                cycle, f_stage, d_stage, e_stage, m_stage, wb_stage);
+            $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", cycle, f_stage, d_stage, e_stage, m_stage, wb_stage);
 
             cycle <= cycle + 1;
         end
-    end
+    
 
 
 endmodule

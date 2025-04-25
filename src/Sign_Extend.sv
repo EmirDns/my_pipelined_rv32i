@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module Sign_Extend(
     input logic [1:0] ImmSrc,    // Control signal for selecting immediate type
     input logic [31:0] Instr,    // Input instruction

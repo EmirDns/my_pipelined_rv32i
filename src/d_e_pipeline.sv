@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module d_e_pipeline(
     input logic clk,
     input logic rst_n,
