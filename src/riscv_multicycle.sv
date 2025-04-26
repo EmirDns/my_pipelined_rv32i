@@ -4,7 +4,7 @@ module riscv_multicycle
     import riscv_pkg::*;
 #(  // Parameter declaration should be here, within #(
         parameter DMemInitFile  = "src/dmem.mem",  // Data memory initialization file
-        parameter IMemInitFile  = "test/lw_dependence.mem"  // Instruction memory initialization file
+        parameter IMemInitFile  = "test/beq_control.mem"  // Instruction memory initialization file
     )  (
     input  logic             clk_i,       // system clock
     input  logic             rstn_i,      // system reset
