@@ -50,7 +50,7 @@ module data_memory #(
     end
     
     //Divide address to 4 in order to convert byte address to word (memory is word addressable).
-    assign read_data = mem[A >> 2];
+    assign read_data = mem[A];
     
     always_ff @(posedge clk) begin
         if(!rst_n) begin
@@ -60,8 +60,8 @@ module data_memory #(
         end
         
         else if(write_enable) begin
-            mem[A >> 2] <= write_data; //No need to divide 4.
-            $fwrite(LogFile, "mem [%h] = 0x%h\n", A >> 2, write_data); // log the data memory writes
+            mem[A] <= write_data; //No need to divide 4.
+            $fwrite(LogFile, "mem [%h] = 0x%h\n", A, write_data); // log the data memory writes
         end  
     end
         

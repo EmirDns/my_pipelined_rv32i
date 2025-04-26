@@ -4,7 +4,7 @@ module riscv_multicycle
     import riscv_pkg::*;
 #(  // Parameter declaration should be here, within #(
         parameter DMemInitFile  = "src/dmem.mem",  // Data memory initialization file
-        parameter IMemInitFile  = "test/data_forw.mem"  // Instruction memory initialization file
+        parameter IMemInitFile  = "test/lw_dependence.mem"  // Instruction memory initialization file
     )  (
     input  logic             clk_i,       // system clock
     input  logic             rstn_i,      // system reset
@@ -316,6 +316,8 @@ module riscv_multicycle
     assign mem_wrt_o   = MemWrite_m; 
 
 
+
+    // PIPELINE LOGGER CODE
     integer LogFile;
     integer cycle = 1;
 
@@ -328,54 +330,51 @@ module riscv_multicycle
             $finish;
         end
         $fwrite(LogFile, "\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n", "F", "D", "E", "M", "WB"); 
+        f_stage  = " ";
+        d_stage  = " ";
+        e_stage  = " ";
+        m_stage  = " ";
+        wb_stage = " ";
     end
 
+
     always_ff @(posedge clk_i) begin
-        
-            if (pc_f == 32'hFFFFFFFF)
-                f_stage <= "Flushed";
-            else if (pc_f == 32'h00000000)
-                f_stage <= " ";
-            else
-                f_stage <= $sformatf("0x%08h", pc_f);
 
+        case(pc_f)
+        32'hFFFFFFFF: f_stage <= "Flushed";
+        32'h00000000: f_stage <= " ";
+        default     : f_stage <= $sformatf("0x%08h", pc_f);     
+        endcase
 
-            if (pc_d == 32'hFFFFFFFF)
-                d_stage <= "Flushed";
-            else if (pc_d == 32'h00000000)
-                d_stage <= " ";
-            else
-                d_stage <= $sformatf("0x%08h", pc_d);
+        case(pc_d)
+        32'hFFFFFFFF: d_stage <= "Flushed";
+        32'h00000000: d_stage <= " ";
+        default     : d_stage <= $sformatf("0x%08h", pc_d);     
+        endcase
 
+        case(pc_e)
+        32'hFFFFFFFF: e_stage <= "Flushed";
+        32'h00000000: e_stage <= " ";
+        default     : e_stage <= $sformatf("0x%08h", pc_e);     
+        endcase
 
-            if (pc_e == 32'hFFFFFFFF)
-                e_stage <= "Flushed";
-            else if (pc_e == 32'h00000000)
-                e_stage <= " ";
-            else
-                e_stage <= $sformatf("0x%08h", pc_e);
+        case(pc_m)
+        32'hFFFFFFFF: m_stage <= "Flushed";
+        32'h00000000: m_stage <= " ";
+        default     : m_stage <= $sformatf("0x%08h", pc_m);     
+        endcase
 
+        case(pc_w)
+        32'hFFFFFFFF: wb_stage <= "Flushed";
+        32'h00000000: wb_stage <= " ";
+        default     : wb_stage <= $sformatf("0x%08h", pc_w);     
+        endcase
 
-            if (pc_m == 32'hFFFFFFFF)
-                m_stage <= "Flushed";
-            else if (pc_m == 32'h00000000)
-                m_stage <= " ";
-            else
-                m_stage <= $sformatf("0x%08h", pc_m);
-
-
-            if (pc_w == 32'hFFFFFFFF)
-                wb_stage <= "Flushed";
-            else if (pc_w == 32'h00000000)
-                wb_stage <= " ";
-            else
-                wb_stage <= $sformatf("0x%08h", pc_w);
-
-
+        if(rstn_i) begin
             $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", cycle, f_stage, d_stage, e_stage, m_stage, wb_stage);
-
             cycle <= cycle + 1;
         end
+    end
     
 
 

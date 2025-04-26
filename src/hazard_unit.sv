@@ -30,7 +30,7 @@ module hazard_unit(
             ForwardA_e = 2'b10;
         end
 
-        else if((RS1_e == RD_w) && (RegWrite_w) && (RD_m != 0)) begin
+        else if((RS1_e == RD_w) && (RegWrite_w) && (RD_w != 0)) begin
             ForwardA_e = 2'b01;
         end
         else begin
@@ -42,7 +42,7 @@ module hazard_unit(
             ForwardB_e = 2'b10;
         end
 
-        else if((RS2_e == RD_w) && (RegWrite_w) && (RD_m != 0)) begin
+        else if((RS2_e == RD_w) && (RegWrite_w) && (RD_w != 0)) begin
             ForwardB_e = 2'b01;
         end
         else begin
