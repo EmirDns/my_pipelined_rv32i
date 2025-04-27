@@ -22,33 +22,34 @@ module riscv_multicycle
     
 
     // Fetch stage variables
-    logic [31:0] pc_f, nextPC_f, PCplus4_f, instr_f;
+    logic [31:0] instr_f, pc_f, nextPC_f, PCplus4_f;
 
     // Decode stage variables
     logic [31:0] instr_d, pc_d, PCplus_d, RD1_d, RD2_d, Imm_Ext_d;
     logic [4:0] RS1_d, RS2_d, RD_d;
     logic [3:0] ALUControl_d;
-    logic [1:0] ResultSrc_d, ImmSrc_d;
+    logic [2:0] ImmSrc_d;
+    logic [1:0] ResultSrc_d;
     logic RegWrite_d, ALU_Src_d, MemWrite_d, Branch_d, Jump_d;
 
     // Execute stage variables
-    logic [31:0] RD1_e, RD2_e, pc_e, Imm_Ext_e, PCplus4_e, WriteData_e, SrcA_e, SrcB_e, ALUResult_e, PCTarget_e;
+    logic [31:0] instr_e, RD1_e, RD2_e, pc_e, Imm_Ext_e, PCplus4_e, WriteData_e, SrcA_e, SrcB_e, ALUResult_e, PCTarget_e;
     logic [4:0] RS1_e, RS2_e, RD_e;
     logic [3:0] ALUControl_e;
     logic [1:0] ResultSrc_e;
     logic RegWrite_e, ALU_Src_e, MemWrite_e, Branch_e, Jump_e, Zero_e, PCSrc_e;
 
     // Memory stage variables
-    logic [31:0] ALUResult_m, WriteData_m, PCplus4_m, ReadData_m, pc_m;
+    logic [31:0] instr_m, ALUResult_m, WriteData_m, PCplus4_m, ReadData_m, pc_m;
     logic [4:0] RD_m;
     logic [1:0] ResultSrc_m;
     logic RegWrite_m, MemWrite_m;
 
     // Write-back stage variables
-    logic [31:0] ALUResult_w, ReadData_w, PCplus4_w, Result_w, pc_w;
+    logic [31:0] instr_w, ALUResult_w, ReadData_w, PCplus4_w, Result_w, pc_w, WriteData_w;
     logic [4:0] RD_w;
     logic [1:0] ResultSrc_w;
-    logic RegWrite_w;
+    logic RegWrite_w, MemWrite_w;
 
     // Hazard unit variables
     logic [1:0] ForwardA_e, ForwardB_e;
@@ -158,6 +159,7 @@ module riscv_multicycle
         .ALUControl_d(ALUControl_d),
         .ALUSrc_d(ALU_Src_d),
 
+        .instr_d(instr_d),
 
         .rd1_e(RD1_e),
         .rd2_e(RD2_e),
@@ -173,7 +175,9 @@ module riscv_multicycle
         .Jump_e(Jump_e),
         .Branch_e(Branch_e),
         .ALUControl_e(ALUControl_e),
-        .ALUSrc_e(ALU_Src_e)
+        .ALUSrc_e(ALU_Src_e),
+
+        .instr_e(instr_e)
     ); 
 
     state3_MUX srcB_hazard_mux(
@@ -230,6 +234,8 @@ module riscv_multicycle
         .ResultSrc_e(ResultSrc_e),
         .MemWrite_e(MemWrite_e),
 
+        .instr_e(instr_e),
+
         .ALUResult_m(ALUResult_m),
         .WriteData_m(WriteData_m), //WriteData_e'nin devamı
         .rd_m(RD_m),
@@ -237,10 +243,17 @@ module riscv_multicycle
         .pc_m(pc_m),
         .RegWrite_m(RegWrite_m),
         .ResultSrc_m(ResultSrc_m),
-        .MemWrite_m(MemWrite_m)
+        .MemWrite_m(MemWrite_m),
+
+        .instr_m(instr_m)
     );
     
+    logic [31:0] dmem [0:1999];
     
+    initial begin
+        $readmemh(DMemInitFile, dmem);
+    end
+
     data_memory #(
     .MEM_SIZE(2000),
     .DMemInitFile(DMemInitFile)  // ← Use top-level parameter
@@ -265,6 +278,12 @@ module riscv_multicycle
         .pc_m(pc_m),
         .RegWrite_m(RegWrite_m),
         .ResultSrc_m(ResultSrc_m),
+
+        .instr_m(instr_m),
+
+        .WriteData_m(WriteData_m),
+
+        .MemWrite_m(MemWrite_m),
         
         .ALUResult_w(ALUResult_w),
         .ReadData_w(ReadData_w),
@@ -272,7 +291,13 @@ module riscv_multicycle
         .pcplus4_w(PCplus4_w),
         .pc_w(pc_w),
         .RegWrite_w(RegWrite_w),
-        .ResultSrc_w(ResultSrc_w)
+        .ResultSrc_w(ResultSrc_w),
+
+        .instr_w(instr_w),
+        
+        .WriteData_w(WriteData_w),
+
+        .MemWrite_w(MemWrite_w)
     );
 
     state3_MUX mux_dmemory_to_registerfile(
@@ -304,24 +329,28 @@ module riscv_multicycle
     ); 
     
     
-    // === Top-Level Output Assignments ===
-    assign pc_o        = pc_f;
-    assign instr_o     = instr_f;              // Retired instruction
-    assign reg_addr_o  = instr_d[11:7];        // Destination register address
-    assign reg_data_o  = Result_w;                // Data written to register file
-    assign mem_addr_o  = ALUResult_m;             // Address accessed in data memory
-    assign mem_data_o  = WriteData_m;               // Data written to data memory
-    assign data_o      = ReadData_m;              // Simple debug read output (can be enhanced)
-    assign update_o    = clk_i;              
-    assign mem_wrt_o   = MemWrite_m; 
+    // Top-Level Output Assignments 
+    assign pc_o        = pc_w;                                      // Program counter in write-back stage
+    assign instr_o     = instr_w;                                   // Instruction in write-back stage
+    assign reg_addr_o  = RD_w & {5{RegWrite_w}};                    // Destination register address in write-back stage
+    assign reg_data_o  = Result_w & {32{RegWrite_w}};               // Data written to register file in write-back stage
 
+    assign mem_addr_o  = (ALUResult_w >> 2) & {32{MemWrite_w}};    // Address accessed in data memory in write-back stage
+    assign mem_data_o  = WriteData_w & {32{MemWrite_w}};;          // Data written to data memory in write-back stage
+    assign mem_wrt_o   = MemWrite_w;                               // Write enable flag in data memory in write-back stage
+
+    assign data_o      = dmem[addr_i >> 2];     
+    
+    assign update_o    = (instr_w != 32'b0) && ~clk_i && rstn_i;              
 
 
     // PIPELINE LOGGER CODE
+    logic pipe_update;
     integer LogFile;
     integer cycle = 1;
-
     string f_stage, d_stage, e_stage, m_stage, wb_stage;
+    
+    assign pipe_update = clk_i && rstn_i;    
 
     initial begin
         LogFile = $fopen("pipe_log", "w");
@@ -335,47 +364,46 @@ module riscv_multicycle
         e_stage  = " ";
         m_stage  = " ";
         wb_stage = " ";
-    end
 
-
-    always_ff @(posedge clk_i) begin
+        forever begin
 
         case(pc_f)
-        32'hFFFFFFFF: f_stage <= "Flushed";
-        32'h00000000: f_stage <= " ";
-        default     : f_stage <= $sformatf("0x%08h", pc_f);     
+            32'hFFFFFFFF: f_stage = "Flushed";
+            32'h00000000: f_stage = " ";
+            default     : f_stage = $sformatf("0x%08h", pc_f);     
         endcase
 
         case(pc_d)
-        32'hFFFFFFFF: d_stage <= "Flushed";
-        32'h00000000: d_stage <= " ";
-        default     : d_stage <= $sformatf("0x%08h", pc_d);     
+            32'hFFFFFFFF: d_stage = "Flushed";
+            32'h00000000: d_stage = " ";
+            default     : d_stage = $sformatf("0x%08h", pc_d);     
         endcase
 
         case(pc_e)
-        32'hFFFFFFFF: e_stage <= "Flushed";
-        32'h00000000: e_stage <= " ";
-        default     : e_stage <= $sformatf("0x%08h", pc_e);     
+            32'hFFFFFFFF: e_stage = "Flushed";
+            32'h00000000: e_stage = " ";
+            default     : e_stage = $sformatf("0x%08h", pc_e);     
         endcase
 
         case(pc_m)
-        32'hFFFFFFFF: m_stage <= "Flushed";
-        32'h00000000: m_stage <= " ";
-        default     : m_stage <= $sformatf("0x%08h", pc_m);     
+            32'hFFFFFFFF: m_stage = "Flushed";
+            32'h00000000: m_stage = " ";
+            default     : m_stage = $sformatf("0x%08h", pc_m);     
         endcase
 
         case(pc_w)
-        32'hFFFFFFFF: wb_stage <= "Flushed";
-        32'h00000000: wb_stage <= " ";
-        default     : wb_stage <= $sformatf("0x%08h", pc_w);     
+            32'hFFFFFFFF: wb_stage = "Flushed";
+            32'h00000000: wb_stage = " ";
+            default     : wb_stage = $sformatf("0x%08h", pc_w);     
         endcase
 
-        if(rstn_i) begin
+        @(posedge pipe_update);
             $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", cycle, f_stage, d_stage, e_stage, m_stage, wb_stage);
-            cycle <= cycle + 1;
+            cycle = cycle + 1;
+        
         end
+
     end
-    
 
 
 endmodule

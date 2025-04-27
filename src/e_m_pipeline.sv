@@ -15,6 +15,8 @@ module e_m_pipeline(
     input logic [1:0] ResultSrc_e,
     input logic MemWrite_e,
 
+    input logic [31:0] instr_e,
+
     output logic [31:0] ALUResult_m,
     output logic [31:0] WriteData_m,
     output logic [4:0] rd_m,
@@ -23,7 +25,9 @@ module e_m_pipeline(
 
     output logic RegWrite_m,
     output logic [1:0] ResultSrc_m,
-    output logic MemWrite_m
+    output logic MemWrite_m,
+
+    output logic [31:0] instr_m
 );
 
     always_ff @(posedge clk) begin
@@ -38,6 +42,8 @@ module e_m_pipeline(
             RegWrite_m     <= 1'b0;
             MemWrite_m     <= 1'b0;
             ResultSrc_m    <= 2'b00;
+
+            instr_m        <= 32'h00000000;
         end
 
         // Flush condition
@@ -51,6 +57,8 @@ module e_m_pipeline(
             RegWrite_m     <= 1'b0;
             MemWrite_m     <= 1'b0;
             ResultSrc_m    <= 2'b00;
+
+            instr_m        <= 32'h00000000;
         end
         
 
@@ -64,6 +72,8 @@ module e_m_pipeline(
             RegWrite_m     <= RegWrite_e;
             ResultSrc_m    <= ResultSrc_e;
             MemWrite_m     <= MemWrite_e;
+
+            instr_m        <= instr_e;
         end
     end
 

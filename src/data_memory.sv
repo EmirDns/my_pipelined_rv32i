@@ -1,24 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 04/03/2025 04:50:47 PM
-// Design Name: 
-// Module Name: data_memory
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module data_memory #(
     parameter MEM_SIZE = 2000, //Memory is 1024 words (each word is 32-bit[4-byte])
@@ -50,7 +30,7 @@ module data_memory #(
     end
     
     //Divide address to 4 in order to convert byte address to word (memory is word addressable).
-    assign read_data = mem[A];
+    assign read_data = mem[(A-32'h8000_0000) >> 2];
     
     always_ff @(posedge clk) begin
         if(!rst_n) begin
@@ -58,11 +38,13 @@ module data_memory #(
                 mem[i] <= 32'b0;
             end
         end
+
         
         else if(write_enable) begin
-            mem[A] <= write_data; //No need to divide 4.
-            $fwrite(LogFile, "mem [%h] = 0x%h\n", A, write_data); // log the data memory writes
+            mem[(A-32'h8000_0000) >> 2] <= write_data; 
+            $fwrite(LogFile, "mem [%h] = 0x%h\n", (A-32'h8000_0000) >> 2, write_data); // log the data memory writes
         end  
     end
+
         
 endmodule

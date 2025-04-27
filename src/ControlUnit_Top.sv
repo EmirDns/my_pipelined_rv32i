@@ -28,7 +28,7 @@ module ControlUnit_Top(
     input logic [2:0] funct3,
     input logic [11:0] imm12,
     output logic RegWrite, ALUSrc, MemWrite,
-    output logic [1:0] ImmSrc,
+    output logic [2:0] ImmSrc,
     output logic [1:0] ResultSrc,
     output logic [3:0] ALUControl,
     output logic Branch,

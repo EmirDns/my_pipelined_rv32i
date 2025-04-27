@@ -14,6 +14,12 @@ module m_w_pipeline(
     input logic RegWrite_m,
     input logic [1:0] ResultSrc_m,
 
+    input logic [31:0] instr_m,
+
+    input logic [31:0] WriteData_m,
+
+    input logic MemWrite_m,
+
     output logic [31:0] ALUResult_w,
     output logic [31:0] ReadData_w,
     output logic [4:0] rd_w,
@@ -21,7 +27,13 @@ module m_w_pipeline(
     output logic [31:0] pc_w,
 
     output logic RegWrite_w,
-    output logic [1:0] ResultSrc_w
+    output logic [1:0] ResultSrc_w,
+
+    output logic [31:0] instr_w,
+
+    output logic [31:0] WriteData_w,
+
+    output logic MemWrite_w
 );
 
     always_ff @(posedge clk) begin
@@ -35,6 +47,12 @@ module m_w_pipeline(
 
             RegWrite_w     <= 1'b0;
             ResultSrc_w    <= 2'b00;
+
+            instr_w        <= 32'h00000000;
+
+            WriteData_w    <= 32'h00000000;
+
+            MemWrite_w     <= 1'b0;
         end
 
         // Flush condition
@@ -47,6 +65,12 @@ module m_w_pipeline(
 
             RegWrite_w     <= 1'b0;
             ResultSrc_w    <= 2'b00;
+
+            instr_w        <= 32'h00000000;
+
+            WriteData_w    <= 32'h00000000;
+
+            MemWrite_w     <= 1'b0;
         end
 
         else if (enable) begin
@@ -58,6 +82,12 @@ module m_w_pipeline(
 
             RegWrite_w     <= RegWrite_m;
             ResultSrc_w    <= ResultSrc_m;
+
+            instr_w        <= instr_m;
+
+            WriteData_w    <= WriteData_m;
+
+            MemWrite_w     <= MemWrite_m;
         end
     end
 

@@ -3,7 +3,10 @@ DONE:
 - multiple write in register_log issues has fixed
 - imem file could be imported from top_module right now
 - data forwarding is working properly
+- stalling and flushing is checked
+- data memory arranged in 0x8000_0000
 
 TODO:
-- stalling and flushing will be checked
-- empty cycles in pipeline logger should be checked
+- stilf first 2 row of pipe logger is empty
+- look to the data memory again
+- test the zbb instructions

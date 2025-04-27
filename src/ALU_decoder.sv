@@ -31,7 +31,7 @@ module ALU_decoder(
     
     always_comb begin
     case(ALUOp)
-        2'b00: ALUControl = 4'b0000; // store or load instructions (ADD)
+        2'b00: ALUControl = 4'b0000; // store or load or lui instructions (ADD)
         2'b01: ALUControl = 4'b0001; // SUB (for beq and bne)
         2'b10: begin
             case(funct3)

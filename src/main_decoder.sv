@@ -31,7 +31,7 @@ module main_decoder(
     output logic RegWrite,
     output logic [1:0] ResultSrc,
     output logic [1:0] ALUOp,
-    output logic [1:0] ImmSrc,
+    output logic [2:0] ImmSrc,
     output logic Jump
     );
     
@@ -43,10 +43,11 @@ module main_decoder(
         // MemWrite: Set high for store instructions
         MemWrite = (op == 7'b0100011);
     
-        // ALUSrc: Set high for load or store or I-type (for zbb set low but for addi etc. set high)
+        // ALUSrc: Set high for load or store or I-type or lui (for zbb set low but for addi etc. set high)
         case(op)
             7'b0000011: ALUSrc = 1'b1;
             7'b0100011: ALUSrc = 1'b1;
+            7'b0110111: ALUSrc = 1'b1;
             7'b0010011: begin
                 if(((imm12 == 12'b011000000001) || (imm12 == 12'b011000000000) || (imm12 == 12'b011000000010)) && (funct3 == 3'b001))
                     ALUSrc = 1'b0; // For zbb  
@@ -58,13 +59,14 @@ module main_decoder(
         endcase
 
     
-        // RegWrite: Set high for load or R-type(ADD, SUB ...) or I-type or J-type
-        RegWrite = (op == 7'b0000011 || op == 7'b0110011 || op == 7'b0010011 || op == 7'b1101111);
+        // RegWrite: Set high for load or R-type(ADD, SUB ...) or I-type or J-type or lui
+        RegWrite = (op == 7'b0000011 || op == 7'b0110011 || op == 7'b0010011 || op == 7'b1101111 || op == 7'b0110111);
     
         // ResultSrc: Set high for load instructions
         case(op)
             7'b0110011: ResultSrc = 2'b00; // For R-type
             7'b0010011: ResultSrc = 2'b00; // For I-type
+            7'b0110111: ResultSrc = 2'b00; // For lui
             7'b0000011: ResultSrc = 2'b01; // For lw
             7'b1101111: ResultSrc = 2'b10; // For J-type
             default:    ResultSrc = 2'b00;
@@ -75,14 +77,15 @@ module main_decoder(
             7'b0110011: ALUOp = 2'b10;  // R-type (arithmetic)
             7'b0010011: ALUOp = 2'b10;  // I-type 
             7'b1100011: ALUOp = 2'b01;  // for beq and bne
-            default:    ALUOp = 2'b00;  // Default (load or store instructions)
+            default:    ALUOp = 2'b00;  // Default (load or store or lui instructions)
         endcase
     
         case(op)
-            7'b0100011: ImmSrc = 2'b01;  // Store
-            7'b1100011: ImmSrc = 2'b10;  // Branch (B-type)
-            7'b1101111: ImmSrc = 2'b11;  // J-type
-            default:    ImmSrc = 2'b00;  // Default (R-type, I-type or load instructions)
+            7'b0100011: ImmSrc = 3'b001;  // Store
+            7'b1100011: ImmSrc = 3'b010;  // Branch (B-type)
+            7'b1101111: ImmSrc = 3'b011;  // J-type
+            7'b0110111: ImmSrc = 3'b100;  // J-type
+            default:    ImmSrc = 3'b000;  // Default (R-type, I-type or load instructions)
         endcase
 
         Jump = (op == 7'b1101111);

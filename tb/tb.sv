@@ -32,7 +32,7 @@ module tb ();
     file_pointer = $fopen("model.log", "w");
     #4
     forever begin
-      if (update) begin
+      @(posedge update); // For if condition, it prints null values to the model.log too.
         if (reg_addr == 0) begin
           $fwrite(file_pointer, "0x%8h (0x%8h)", pc, instr);
         end else begin
@@ -46,8 +46,6 @@ module tb ();
           $fwrite(file_pointer, "mem 0x%8h 0x%8h", mem_addr, mem_data);
         end
         $fwrite(file_pointer, "\n");
-        #2;
-      end
     end
   end
   initial
@@ -64,6 +62,7 @@ module tb ();
     #10000;
     for (logic [31:0] i = 32'h8000_0000; i < 32'h8000_0000 + 'h20; i = i + 4) begin
       addr = i;
+      #0;
       $display("data @ mem[0x%8h] = %8h", addr, data);
     end
     $finish;

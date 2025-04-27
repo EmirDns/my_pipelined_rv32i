@@ -22,6 +22,7 @@ module d_e_pipeline(
     input logic [3:0] ALUControl_d,
     input logic ALUSrc_d,
 
+    input logic [31:0] instr_d,
 
     output logic [31:0] rd1_e,
     output logic [31:0] rd2_e,
@@ -38,7 +39,9 @@ module d_e_pipeline(
     output logic Jump_e,
     output logic Branch_e,
     output logic [3:0] ALUControl_e,
-    output logic ALUSrc_e
+    output logic ALUSrc_e,
+
+    output logic [31:0] instr_e
 );
 
     always_ff @(posedge clk) begin
@@ -60,6 +63,8 @@ module d_e_pipeline(
             ALUSrc_e       <= 1'b0;
             Jump_e         <= 1'b0;
             Branch_e       <= 1'b0;
+
+            instr_e        <= 32'h00000000;
         end
         
         // Flush condition
@@ -80,6 +85,8 @@ module d_e_pipeline(
             ALUSrc_e       <= 1'b0;
             Jump_e         <= 1'b0;
             Branch_e       <= 1'b0;
+
+            instr_e        <= 32'h00000000;
         end
 
         else if (enable) begin
@@ -99,6 +106,8 @@ module d_e_pipeline(
             ALUSrc_e       <= ALUSrc_d;
             Jump_e         <= Jump_d;
             Branch_e       <= Branch_d;
+
+            instr_e        <= instr_d;
         end
     end
 
