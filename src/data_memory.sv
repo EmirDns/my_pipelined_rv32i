@@ -38,7 +38,7 @@ module data_memory #(
                 mem[i] <= 32'b0;
             end
         end
-
+        
         
         else if(write_enable) begin
             mem[(A-32'h8000_0000) >> 2] <= write_data; 
