@@ -397,7 +397,7 @@ module riscv_multicycle
             default     : wb_stage = $sformatf("0x%08h", pc_w);     
         endcase
 
-        @(posedge pipe_update);
+        @(negedge pipe_update);
             $fwrite(LogFile, "%0d\t%s\t%s\t%s\t%s\t%s\n", cycle, f_stage, d_stage, e_stage, m_stage, wb_stage);
             cycle = cycle + 1;
         
